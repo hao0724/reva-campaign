@@ -1,111 +1,43 @@
-/**
- * 處理 POST 請求：接收資料、儲存照片、寫入試算表並傳送通知
- */
-function doPost(e) {
-  // 防錯機制：如果 e 是空的（手動點擊執行按鈕時），則跳過後續動作
-  if (!e || !e.postData) {
-    console.error("警告：偵測到手動執行，請透過網頁表單提交資料或執行 testDoPost()。");
-    return ContentService.createTextOutput("Error: No data received").setMimeType(ContentService.MimeType.TEXT);
-  }
-
-  try {
-    const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheets()[0]; 
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>你的網頁標題</title>
     
-    // 1. 建立或取得照片存放資料夾
-    const folderName = "活動登記照片區";
-    let folders = DriveApp.getFoldersByName(folderName);
-    let folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(folderName);
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
 
-    // 2. 處理照片 (Base64 轉為檔案)
-    const snBlob = Utilities.newBlob(Utilities.base64Decode(data.snPhotoData), 'image/jpeg', data.snPhotoName);
-    const snFile = folder.createFile(snBlob);
-    
-    const invoiceBlob = Utilities.newBlob(Utilities.base64Decode(data.invoicePhotoData), 'image/jpeg', data.invoicePhotoName);
-    const invoiceFile = folder.createFile(invoiceBlob);
+    <div class="container">
+        <h1>歡迎來到我的網站</h1>
+        <p>這是一個乾淨的 HTML5 範例。你可以從這裡開始修改你的內容。</p>
+        
+        <ul>
+            <li>項目一</li>
+            <li>項目二</li>
+            <li>項目三</li>
+        </ul>
+    </div>
 
-    // 3. 將資料寫入試算表
-    sheet.appendRow([
-      data.timestamp,
-      data.name,
-      "'" + data.phone, // 強制為字串，避免開頭 0 消失
-      data.email,
-      data.address,
-      data.serialNumber,
-      snFile.getUrl(),
-      invoiceFile.getUrl()
-    ]);
-
-    // --- 修改此處：請確保填寫正確的收信 Email ---
-    const adminEmail = "您的電子郵件@gmail.com"; 
-    
-    // 檢查 Email 是否仍為範例文字
-    if (adminEmail === "您的電子郵件@gmail.com") {
-      console.error("警告：您尚未在 Code.gs 第 42 行修改收件人 Email 位址！");
-    } else {
-      try {
-        const subject = "【新登記通知】" + data.name + " 已完成 REVA 海報登記";
-        const body = "您好，系統剛收到一份新的活動登記：\n\n" +
-                     "填寫時間：" + data.timestamp + "\n" +
-                     "姓名：" + data.name + "\n" +
-                     "電話：" + data.phone + "\n" +
-                     "Email：" + data.email + "\n" +
-                     "寄送地址：" + data.address + "\n" +
-                     "產品序號：" + data.serialNumber + "\n\n" +
-                     "請點擊下方連結前往試算表查看完整資料：\n" +
-                     ss.getUrl();
-
-        MailApp.sendEmail(adminEmail, subject, body);
-        console.log("信件已成功傳送至: " + adminEmail);
-      } catch (mailError) {
-        console.error("發信失敗，原因：" + mailError.toString());
-      }
-    }
-    // ---------------------------------
-
-    return ContentService.createTextOutput("Success").setMimeType(ContentService.MimeType.TEXT);
-  } catch (error) {
-    console.error("系統執行錯誤：" + error.toString());
-    return ContentService.createTextOutput("Error: " + error.toString()).setMimeType(ContentService.MimeType.TEXT);
-  }
-}
-
-/**
- * 處理 GET 請求：渲染前端頁面
- */
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('index')
-      .setTitle('購買 REVA 顯示卡 - 限量海報登記')
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-}
-
-/**
- * 測試專用函式：模擬表單提交
- * 點擊編輯器上方的執行按鈕時，請選擇執行「testDoPost」
- */
-function testDoPost() {
-  // 準備測試用的 Base64 假圖資料 (1x1 像素)
-  const dummyImage = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
-  
-  const mockEvent = {
-    postData: {
-      contents: JSON.stringify({
-        timestamp: new Date().toLocaleString('zh-TW'),
-        name: "測試員",
-        phone: "0900000000",
-        email: "test@example.com",
-        address: "測試地址 123 號",
-        serialNumber: "SN-TEST-999",
-        snPhotoData: dummyImage,
-        snPhotoName: "test_sn.jpg",
-        invoicePhotoData: dummyImage,
-        invoicePhotoName: "test_invoice.jpg"
-      })
-    }
-  };
-  
-  console.log("開始執行模擬測試...");
-  doPost(mockEvent);
-}
+    <script>
+        console.log("網頁已載入完成！");
+    </script>
+</body>
+</html>
