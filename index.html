@@ -18,6 +18,9 @@
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        /* 針對長條文的樣式優化 */
+        .terms-text { color: #a1a1aa; line-height: 1.8; text-align: justify; }
+        .terms-section { border-left: 4px solid #dc2626; padding-left: 1rem; margin-bottom: 1.5rem; }
     </style>
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen">
@@ -205,7 +208,7 @@
                 if (!formData.address.trim()) newErrors.address = '請輸入寄送地址';
                 if (!formData.serialNumber.trim()) newErrors.serialNumber = '請輸入產品序號';
                 if (formData.captchaInput.toUpperCase() !== captchaValue) newErrors.captchaInput = '驗證碼輸入錯誤';
-                if (!formData.agreed) newErrors.agreed = '您必須勾選同意條款';
+                if (!formData.agreed) newErrors.agreed = '您必須勾選同意條款才能送出';
                 if (!files.snPhoto) newErrors.snPhoto = '請上傳序號貼紙照片';
                 if (!files.invoicePhoto) newErrors.invoicePhoto = '請上傳發票明細照片';
 
@@ -264,13 +267,13 @@
 
             return (
                 <div className="max-w-4xl mx-auto px-4 py-8">
-                    {/* 更新圖片路徑為 images/REVA_Limited.jpg */}
+                    {/* Banner 圖片區域 */}
                     <div className="mb-8 flex justify-center animate-fade-in">
                         <img 
                             src="images/REVA_Limited.jpg" 
                             alt="REVA Limited Banner" 
                             className="w-full max-w-[1000px] h-auto rounded-2xl shadow-2xl border border-zinc-800"
-                            onError={(e) => { e.target.style.display = 'none'; console.warn('Banner image not found at images/REVA_Limited.jpg'); }}
+                            onError={(e) => { e.target.style.display = 'none'; }}
                         />
                     </div>
 
@@ -278,7 +281,7 @@
                         <div className="inline-block px-4 py-1 bg-red-600 text-[10px] font-black tracking-[0.2em] rounded-full mb-4 uppercase">Limited Poster Gift</div>
                         <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter mb-4 text-white uppercase">購買 REVA 顯示卡</h1>
                         <p className="text-red-500 font-bold text-xl mb-4 underline decoration-red-600/30 underline-offset-8 italic font-black uppercase tracking-wider">填寫資料就送限量海報</p>
-                        <p className="text-zinc-500 max-w-lg mx-auto font-medium">請確保資料填寫正確。照片需清晰，以免影響海報寄送權益。</p>
+                        <p className="text-zinc-500 max-w-lg mx-auto font-medium text-sm">請確保資料填寫正確。照片需清晰，以免影響海報寄送權益。</p>
                     </header>
 
                     <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
@@ -431,6 +434,60 @@
                             </button>
                         </div>
                     </form>
+
+                    {/* 活動條款與權益說明區塊 */}
+                    <div className="mt-20 p-8 bg-zinc-900/50 border border-zinc-800 rounded-3xl animate-fade-in space-y-10">
+                        <div>
+                            <div className="terms-section">
+                                <h3 className="text-xl font-black text-white italic uppercase tracking-widest">活動條款</h3>
+                            </div>
+                            <div className="terms-text text-sm space-y-4">
+                                <p>本活動僅限於活動日期內 2026/1/1 起至 2026/12/31 23:59 PM 止（下稱活動日期）消費者於購買日起30天內（以購買日期為主）上PowerColor網頁上登錄資料，經撼訊科技股份有限公司（下稱本公司）審核成功後即可享有延長保固，未於活動日期內完成登錄，視同放棄本活動資格，不得要求延期、折價、其他贈品或補登錄。</p>
+                                <p>同一產品序號僅限登錄一次延長保固，登錄完成並審核成功後，消費者不得將延長登記再轉讓給他人；配件、耗材及活動獎品不適用於此延長保固服務。於活動期間內，一張統一發票僅能接受「指定一張顯示卡以登錄序號方式做產品之延長保固」，如一張發票內有兩項以上(含)之顯示卡購買紀錄者，同張登錄發票其餘之產品恕無法提供延長保固服務。</p>
+                                <p>參加延長保固服務活動登錄之消費者，應正確完整填妥本人相關資料（姓名、E-Mail、聯絡電話、產品序號及型號…等），並上傳有效之購買發票以及清晰可見之產品序號圖片，若未依規定詳實填寫或填寫資料錯誤將視為無效登錄，且未於時間內補齊登錄資料，本公司就該狀況不負有任何責任並得保留取消該登錄者本活動資格的權利。</p>
+                                <p>此活動是與捷元合作，活動對象僅限於台澎金馬地區消費者，且僅限於與捷元合作相關之經銷商所購買之本網頁顯示卡產品(本活動不適用直接與捷元購買並開立捷元發票者)。任一申請資料（如申請人、聯絡人、買受人、電子郵件、連絡電話、地址...等）非為與捷元合作之經銷商相關資料者，恕無法參與本活動。為維護消費者權益，本活動恕不接受代理申請。申請文件若有造假不實者，撼訊科技有權取消活動資格；偽造作假文件者，需自負法律責任。</p>
+                                <p>倘任何人以任何非法行為登錄或破壞本活動規則者，本公司除有權認定該筆登錄無效外，將可能訴諸一切法律行動，以維權益。</p>
+                                <p>消費者提供之所有資料必須正確屬實，若有疑慮，本公司有權要求登錄者提供相關證明文件，以確認登錄者之身份真實性，若登錄者拒絕提供，本公司有權取消其登錄資格。</p>
+                                <p>活動過程如因不可抗力（如天災或消費者人為因素）或電腦系統故障等因素，直接或間接造成撼訊科技無法履行其全部或部分義務，或因活動伺服器故障、損壞、延誤、資料有誤或遺失情況等，撼訊科技均無需負任何相關責任。</p>
+                                <p>撼訊科技對以下情形不負責，並免責聲明：<br/>
+                                1. 產品序號無法辨識、遭毀損、移除、變造或偽造等。<br/>
+                                2. 因人為不當使用（包含但不限於不當清潔或安裝、誤用等）、或未依本產品使用說明所造成故障。<br/>
+                                3. 任何使用或安裝非法軟體、硬體所造成產品損害、錯誤或更新BIOS。</p>
+                                <p>本活動收集之個人資料，經本人同意僅供本活動使用，若登錄者未依規定填寫個人資料導致審核失敗，本公司依本辦法第四條有權取消登錄者之延長保固權益。</p>
+                                <p>消費者登錄延長保固之同時，即同意接受活動辦法與相關規範。如有違反，撼訊將取消其延長保固服務資格。若有其他未盡事宜，悉依撼訊科技隨時修改或解釋。</p>
+                                <p>撼訊科技保有隨時修改、暫停、終止或解釋本次活動之最終權利，如有任何爭議，本公司保留最終決定權。</p>
+                                <p>活動服務信箱 <a href="mailto:event@tul.com.tw" class="text-red-500 hover:underline">event@tul.com.tw</a> 服務時間週一至週五 09:30 - 12:00、13:30 - 17:00，欲瞭解更多保固條款與資訊，請至PowerColor官網「共同保固條款」查詢。</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="terms-section">
+                                <h3 className="text-xl font-black text-white italic uppercase tracking-widest">注意事項</h3>
+                            </div>
+                            <div className="terms-text text-sm">
+                                <p>請確保您上傳的照片清晰可辨，尤其是序號貼紙部分。若因照片模糊導致無法審核，將視同放棄參加資格。</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="terms-section">
+                                <h3 className="text-xl font-black text-white italic uppercase tracking-widest">個人資料保護法權益說明</h3>
+                            </div>
+                            <div className="terms-text text-sm space-y-4">
+                                <p>親愛的消費者您好，基於個人資料（下稱個資）之蒐集，涉及您的隱私權益，撼訊科技股份有限公司（下稱本公司）向您蒐集個人資料時，依個人資料保護法第8條第1項規定，應明確告知您下列事項：撼訊科技股份有限公司於台澎金馬地區﹐基於延長保固活動（下稱本活動）之目的需要，在活動期間參加本活動之消費者，於本網站上所填具之個資（姓名、電子郵件、電話），本公司將適法蒐集、處理、利用且願採取適當措施維護個資安全。消費者可依個人資料保護法第3條規定行使權利及方式，亦可自由選擇是否提供個人資料，惟不提供或提供不完整個資將依本辦法第四條，本公司有權取消登錄者延長保固權益。</p>
+                                <p>本公司不會主動要求參加者提供銀行帳號或是付費等…敏感訊息。請用戶提高警覺，以防被詐騙。</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="terms-section">
+                                <h3 className="text-xl font-black text-white italic uppercase tracking-widest">授權商店</h3>
+                            </div>
+                            <div className="terms-text text-sm">
+                                <p>請向與捷元合作之合法授權經銷商購買本產品，方可享有本活動之權益。非授權管道之購買紀錄恕無法提供延長保固服務。</p>
+                            </div>
+                        </div>
+                    </div>
 
                     <footer className="mt-20 text-center text-zinc-600 text-[10px] tracking-[0.3em] uppercase pb-12 font-bold tracking-widest">
                         © 2026 REVA Official Campaign Registration System.
