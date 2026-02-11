@@ -31,6 +31,12 @@
 
         // --- 這是您的 Google Apps Script Web App URL ---
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFDyDckZ9-4nK-tjKROChqJJkEN33bBOXaUV2haN8FB8pFi9HIJ8A09hqcUH7kKoCH/exec";
+        
+        /**
+         * 資安優化：自定義驗證金鑰
+         * 後端 GAS 也會設定一組相同的 Key，若兩者不符，資料將不會被寫入試算表。
+         */
+        const VALIDATION_TOKEN = "REVA_SECURE_POST_2026"; 
 
         // 自定義圖示組件 (SVG)
         const Icon = ({ name, className = "w-5 h-5" }) => {
@@ -229,7 +235,9 @@
                         snPhotoName: files.snPhoto.name,
                         invoicePhotoData: invoiceBase64,
                         invoicePhotoName: files.invoicePhoto.name,
-                        timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })
+                        timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+                        // 加入驗證金鑰
+                        authToken: VALIDATION_TOKEN 
                     };
 
                     await fetch(SCRIPT_URL, {
@@ -337,7 +345,7 @@
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">產品序號 (S/N) *</label>
                                 <input name="serialNumber" value={formData.serialNumber} onChange={handleInputChange} placeholder="請輸入顯示卡背面序號" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3.5 px-5 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition-all text-white placeholder:text-zinc-600 font-medium" />
-                                <p className="text-[10px] text-zinc-600 italic mt-2 font-medium uppercase tracking-wider">※ 序號貼紙通常位於顯示卡背面金手指上方或外盒標籤處</p>
+                                <p className="text-[10px] text-zinc-600 italic mt-2 font-medium uppercase tracking-wider">※ 序號貼紙通常位於顯示卡背面金手指上方過外盒標籤處</p>
                             </div>
                         </section>
 
