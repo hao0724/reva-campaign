@@ -28,12 +28,13 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // 1. 請填入您的 Google Apps Script 部署網址
+        // 1. 請在此填入您的 Google Apps Script 部署網址
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFDyDckZ9-4nK-tjKROChqJJkEN33bBOXaUV2haN8FB8pFi9HIJ8A09hqcUH7kKoCH/exec";
         
-        // 2. 資安金鑰 (需與後端一致)
+        // 2. 資安金鑰 (必須與後端 Code.gs 一致)
         const VALIDATION_TOKEN = "REVA_SECURE_POST_2026"; 
 
+        // 修復後的圖示組件：強制設定 width/height 屬性，防止 SVG 無限放大
         const Icon = ({ name, className = "w-5 h-5" }) => {
             const icons = {
                 'map-pin': (<React.Fragment><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></React.Fragment>),
@@ -44,9 +45,25 @@
                 'alert-circle': (<React.Fragment><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></React.Fragment>),
                 'send': (<React.Fragment><line x1="22" x2="11" y1="2" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></React.Fragment>),
                 'image': (<React.Fragment><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></React.Fragment>),
-                'file-text': (<React.Fragment><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></React.Fragment>)
+                'file-text': (<React.Fragment><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></React.Fragment>),
+                'x': (<React.Fragment><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></React.Fragment>)
             };
-            return (<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{icons[name] || null}</svg>);
+            return (
+                <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    width="24" 
+                    height="24" 
+                    className={className}
+                >
+                    {icons[name] || null}
+                </svg>
+            );
         };
 
         const App = () => {
@@ -57,7 +74,6 @@
             const [errors, setErrors] = useState({});
             const [isSubmitting, setIsSubmitting] = useState(false);
             const [submitted, setSubmitted] = useState(false);
-            const [submitError, setSubmitError] = useState(null);
             const [captchaValue, setCaptchaValue] = useState('');
 
             const generateCaptcha = () => {
@@ -103,10 +119,10 @@
                 if (!formData.email.trim()) n.email = '請輸入電子郵件';
                 if (!formData.address.trim()) n.address = '請輸入寄送地址';
                 if (!formData.serialNumber.trim()) n.serialNumber = '請輸入產品序號';
-                if (formData.captchaInput.toUpperCase() !== captchaValue) n.captchaInput = '驗證碼輸入錯誤';
-                if (!formData.agreed) n.agreed = '您必須勾選同意條款';
+                if (formData.captchaInput.toUpperCase() !== captchaValue) n.captchaInput = '驗證碼錯誤';
+                if (!formData.agreed) n.agreed = '您必須同意條款';
                 if (!files.snPhoto) n.snPhoto = '請上傳序號貼紙照片';
-                if (!files.invoicePhoto) n.invoicePhoto = '請上傳發票明細照片';
+                if (!files.invoicePhoto) n.invoicePhoto = '請上傳發票照片';
 
                 if (Object.keys(n).length > 0) { setErrors(n); return; }
 
@@ -121,12 +137,24 @@
                         r.onload = () => res(r.result.split(',')[1]);
                     });
                     
-                    const payload = { ...formData, snPhotoData: snBase64, snPhotoName: files.snPhoto.name, invoicePhotoData: invBase64, invoicePhotoName: files.invoicePhoto.name, timestamp: new Date().toLocaleString('zh-TW'), authToken: VALIDATION_TOKEN };
+                    const payload = { 
+                        ...formData, 
+                        snPhotoData: snBase64, 
+                        snPhotoName: files.snPhoto.name, 
+                        invoicePhotoData: invBase64, 
+                        invoicePhotoName: files.invoicePhoto.name, 
+                        timestamp: new Date().toLocaleString('zh-TW'), 
+                        authToken: VALIDATION_TOKEN 
+                    };
 
                     await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
                     setSubmitted(true);
-                } catch (error) { setSubmitError("連線失敗，請稍後再試。"); } 
-                finally { setIsSubmitting(false); }
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } catch (error) { 
+                    alert("連線失敗，請檢查 API 網址或網路。"); 
+                } finally { 
+                    setIsSubmitting(false); 
+                }
             };
 
             if (submitted) {
@@ -136,7 +164,7 @@
                             <Icon name="check-circle" className="w-16 h-16 text-green-500 mx-auto mb-6" />
                             <h2 className="text-3xl font-black text-white mb-4 italic uppercase">Success</h2>
                             <p className="text-zinc-400 mb-8 font-medium">您的資料已成功送出！海報將於審核後寄出。</p>
-                            <button onClick={handleReset} className="w-full bg-red-600 hover:bg-red-700 py-4 rounded-xl font-bold uppercase tracking-widest transition-all">Register Again</button>
+                            <button onClick={handleReset} className="w-full bg-red-600 hover:bg-red-700 py-4 rounded-xl font-bold uppercase tracking-widest transition-all shadow-lg shadow-red-600/20">Register Again</button>
                         </div>
                     </div>
                 );
@@ -155,64 +183,114 @@
                     </header>
 
                     <form onSubmit={handleSubmit} className="space-y-8 animate-fade-in">
-                        {/* 這裡省略重複的表單欄位 HTML，結構與先前一致，僅確保使用了新的 VALIDATION_TOKEN */}
+                        {/* 基本資料 */}
                         <section className="bg-glass border border-zinc-800 p-8 rounded-3xl shadow-xl space-y-6">
-                            <div className="flex items-center gap-3 mb-2"><Icon name="map-pin" className="text-red-500"/><h2 className="text-xl font-black text-zinc-300 italic uppercase">Shipping Info</h2></div>
-                            <input name="name" value={formData.name} onChange={(e)=>setFormData({...formData, name: e.target.value})} placeholder="姓名 *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3 px-5 focus:border-red-600 outline-none text-white"/>
-                            <input name="phone" value={formData.phone} onChange={(e)=>setFormData({...formData, phone: e.target.value})} placeholder="電話 *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3 px-5 focus:border-red-600 outline-none text-white"/>
-                            <input name="email" value={formData.email} onChange={(e)=>setFormData({...formData, email: e.target.value})} placeholder="Email *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3 px-5 focus:border-red-600 outline-none text-white"/>
-                            <input name="address" value={formData.address} onChange={(e)=>setFormData({...formData, address: e.target.value})} placeholder="寄送地址 *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3 px-5 focus:border-red-600 outline-none text-white"/>
-                        </section>
-
-                        <section className="bg-glass border border-zinc-800 p-8 rounded-3xl shadow-xl">
-                            <div className="flex items-center gap-3 mb-6"><Icon name="cpu" className="text-red-500"/><h2 className="text-xl font-black text-zinc-300 italic uppercase">Product ID</h2></div>
-                            <input name="serialNumber" value={formData.serialNumber} onChange={(e)=>setFormData({...formData, serialNumber: e.target.value})} placeholder="產品序號 (S/N) *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3 px-5 focus:border-red-600 outline-none text-white"/>
-                        </section>
-
-                        <section className="bg-glass border border-zinc-800 p-8 rounded-3xl shadow-xl">
-                             <div className="flex items-center gap-3 mb-8"><Icon name="camera" className="text-red-500"/><h2 className="text-xl font-black text-zinc-300 italic uppercase">Attachments</h2></div>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-zinc-400 block text-center uppercase tracking-widest">序號貼紙 *</label>
-                                    <div className="relative aspect-video bg-zinc-900/50 border-2 border-dashed border-zinc-700 rounded-2xl flex items-center justify-center overflow-hidden">
-                                        {previews.snPhoto ? <img src={previews.snPhoto} className="w-full h-full object-cover"/> : <label className="cursor-pointer text-zinc-600 text-[10px] font-bold uppercase tracking-widest flex flex-col items-center"><Icon name="image" className="mb-2"/>點擊上傳貼紙照片<input type="file" accept="image/*" onChange={(e)=>handleFileChange(e, 'snPhoto')} className="hidden"/></label>}
-                                        {previews.snPhoto && <button type="button" onClick={()=>setPreviews({...previews, snPhoto:null})} className="absolute top-2 right-2 bg-red-600 p-1 rounded-full"><Icon name="x" className="w-4 h-4"/></button>}
-                                    </div>
+                            <div className="flex items-center gap-3 mb-2">
+                                <Icon name="map-pin" className="w-5 h-5 text-red-500"/>
+                                <h2 className="text-xl font-black text-zinc-300 italic uppercase">Shipping Info</h2>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <input name="name" value={formData.name} onChange={(e)=>setFormData({...formData, name: e.target.value})} placeholder="姓名 *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3.5 px-5 focus:border-red-600 outline-none text-white transition-all"/>
+                                <input name="phone" value={formData.phone} onChange={(e)=>setFormData({...formData, phone: e.target.value})} placeholder="電話 *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3.5 px-5 focus:border-red-600 outline-none text-white transition-all"/>
+                                <div className="md:col-span-2">
+                                    <input name="email" value={formData.email} onChange={(e)=>setFormData({...formData, email: e.target.value})} placeholder="Email *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3.5 px-5 focus:border-red-600 outline-none text-white transition-all"/>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-zinc-400 block text-center uppercase tracking-widest">發票明細 *</label>
-                                    <div className="relative aspect-video bg-zinc-900/50 border-2 border-dashed border-zinc-700 rounded-2xl flex items-center justify-center overflow-hidden">
-                                        {previews.invoicePhoto ? <img src={previews.invoicePhoto} className="w-full h-full object-cover"/> : <label className="cursor-pointer text-zinc-600 text-[10px] font-bold uppercase tracking-widest flex flex-col items-center"><Icon name="file-text" className="mb-2"/>點擊上傳發票明細<input type="file" accept="image/*" onChange={(e)=>handleFileChange(e, 'invoicePhoto')} className="hidden"/></label>}
-                                        {previews.invoicePhoto && <button type="button" onClick={()=>setPreviews({...previews, invoicePhoto:null})} className="absolute top-2 right-2 bg-red-600 p-1 rounded-full"><Icon name="x" className="w-4 h-4"/></button>}
+                                <div className="md:col-span-2">
+                                    <input name="address" value={formData.address} onChange={(e)=>setFormData({...formData, address: e.target.value})} placeholder="寄送地址 *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3.5 px-5 focus:border-red-600 outline-none text-white transition-all"/>
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* 產品資訊 */}
+                        <section className="bg-glass border border-zinc-800 p-8 rounded-3xl shadow-xl">
+                            <div className="flex items-center gap-3 mb-6">
+                                <Icon name="cpu" className="w-5 h-5 text-red-500"/>
+                                <h2 className="text-xl font-black text-zinc-300 italic uppercase">Product ID</h2>
+                            </div>
+                            <input name="serialNumber" value={formData.serialNumber} onChange={(e)=>setFormData({...formData, serialNumber: e.target.value})} placeholder="產品序號 (S/N) *" className="w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3.5 px-5 focus:border-red-600 outline-none text-white transition-all uppercase"/>
+                            <p className="text-[10px] text-zinc-500 mt-2 italic font-bold tracking-wider uppercase">※ 請輸入顯卡背面之 S/N 序號</p>
+                        </section>
+
+                        {/* 照片上傳 */}
+                        <section className="bg-glass border border-zinc-800 p-8 rounded-3xl shadow-xl">
+                             <div className="flex items-center gap-3 mb-8">
+                                <Icon name="camera" className="w-5 h-5 text-red-500"/>
+                                <h2 className="text-xl font-black text-zinc-300 italic uppercase">Attachments</h2>
+                             </div>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-3 text-center">
+                                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest">序號貼紙 *</label>
+                                    <div className="relative aspect-video bg-zinc-900/50 border-2 border-dashed border-zinc-700 rounded-2xl flex items-center justify-center overflow-hidden hover:border-red-600/50 transition-colors">
+                                        {previews.snPhoto ? (
+                                            <React.Fragment>
+                                                <img src={previews.snPhoto} className="w-full h-full object-cover"/>
+                                                <button type="button" onClick={()=>setPreviews({...previews, snPhoto:null})} className="absolute top-2 right-2 bg-red-600 p-1 rounded-full shadow-lg"><Icon name="x" className="w-4 h-4 text-white"/></button>
+                                            </React.Fragment>
+                                        ) : (
+                                            <label className="cursor-pointer text-zinc-600 text-[10px] font-bold uppercase tracking-widest flex flex-col items-center gap-2">
+                                                <Icon name="image" className="w-8 h-8"/>點擊上傳貼紙照片
+                                                <input type="file" accept="image/*" onChange={(e)=>handleFileChange(e, 'snPhoto')} className="hidden"/>
+                                            </label>
+                                        )}
                                     </div>
+                                    {errors.snPhoto && <p className="text-red-500 text-[10px] font-bold">{errors.snPhoto}</p>}
+                                </div>
+                                <div className="space-y-3 text-center">
+                                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest">發票明細 *</label>
+                                    <div className="relative aspect-video bg-zinc-900/50 border-2 border-dashed border-zinc-700 rounded-2xl flex items-center justify-center overflow-hidden hover:border-red-600/50 transition-colors">
+                                        {previews.invoicePhoto ? (
+                                            <React.Fragment>
+                                                <img src={previews.invoicePhoto} className="w-full h-full object-cover"/>
+                                                <button type="button" onClick={()=>setPreviews({...previews, invoicePhoto:null})} className="absolute top-2 right-2 bg-red-600 p-1 rounded-full shadow-lg"><Icon name="x" className="w-4 h-4 text-white"/></button>
+                                            </React.Fragment>
+                                        ) : (
+                                            <label className="cursor-pointer text-zinc-600 text-[10px] font-bold uppercase tracking-widest flex flex-col items-center gap-2">
+                                                <Icon name="file-text" className="w-8 h-8"/>點擊上傳發票照片
+                                                <input type="file" accept="image/*" onChange={(e)=>handleFileChange(e, 'invoicePhoto')} className="hidden"/>
+                                            </label>
+                                        )}
+                                    </div>
+                                    {errors.invoicePhoto && <p className="text-red-500 text-[10px] font-bold">{errors.invoicePhoto}</p>}
                                 </div>
                              </div>
                         </section>
 
+                        {/* 驗證碼 */}
                         <section className="bg-glass border border-zinc-800 p-8 rounded-3xl shadow-xl flex flex-col md:flex-row items-center gap-6">
-                            <div className="bg-zinc-800 px-6 py-2 rounded-xl font-mono text-2xl tracking-[0.3em] text-white italic cursor-pointer border border-zinc-700" onClick={generateCaptcha}>{captchaValue}</div>
-                            <input value={formData.captchaInput} onChange={(e)=>setFormData({...formData, captchaInput: e.target.value})} placeholder="輸入驗證碼" className="flex-1 w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3 px-5 focus:border-red-600 outline-none text-white uppercase font-bold tracking-widest"/>
+                            <div className="bg-zinc-800 px-6 py-2 rounded-xl font-mono text-2xl tracking-[0.3em] text-white italic cursor-pointer border border-zinc-700 select-none shadow-inner" onClick={generateCaptcha} title="點擊換一張">
+                                {captchaValue}
+                            </div>
+                            <input value={formData.captchaInput} onChange={(e)=>setFormData({...formData, captchaInput: e.target.value})} placeholder="請輸入上方驗證碼" className="flex-1 w-full bg-zinc-800/50 border border-zinc-700 rounded-xl py-3.5 px-5 focus:border-red-600 outline-none text-white uppercase font-black tracking-widest"/>
                         </section>
 
+                        {/* 送出與條款 */}
                         <div className="space-y-6">
-                            <label className="flex items-start gap-4 cursor-pointer">
-                                <input type="checkbox" checked={formData.agreed} onChange={(e)=>setFormData({...formData, agreed: e.target.checked})} className="mt-1 w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-red-600 focus:ring-red-600"/>
-                                <span className="text-xs text-zinc-500 font-medium">我確認填寫資訊皆為真實有效，並同意個人資料之蒐集與處理，專供海報寄送與活動登記使用。 *</span>
+                            <label className="flex items-start gap-4 cursor-pointer group">
+                                <input type="checkbox" checked={formData.agreed} onChange={(e)=>setFormData({...formData, agreed: e.target.checked})} className="mt-1 w-5 h-5 rounded border-zinc-700 bg-zinc-800 text-red-600 focus:ring-red-600 focus:ring-offset-zinc-950"/>
+                                <span className="text-xs text-zinc-500 group-hover:text-zinc-300 transition-colors leading-relaxed font-medium">我確認填寫資訊皆為真實有效，並同意個人資料之蒐集與處理，專供海報寄送與活動登記使用。 *</span>
                             </label>
-                            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xl italic uppercase tracking-widest shadow-2xl transition-all disabled:bg-zinc-800">
-                                {isSubmitting ? <div className="spinner w-6 h-6 border-4 border-white/30 border-t-white rounded-full mx-auto"></div> : "Submit Registration"}
+                            {errors.agreed && <p className="text-red-500 text-xs">{errors.agreed}</p>}
+
+                            <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xl italic uppercase tracking-widest shadow-2xl transition-all disabled:bg-zinc-800 transform active:scale-[0.98] shadow-red-600/30">
+                                {isSubmitting ? (
+                                    <div className="spinner w-6 h-6 border-4 border-white/30 border-t-white rounded-full mx-auto"></div>
+                                ) : (
+                                    <div className="flex items-center justify-center gap-3 font-black">
+                                        <span>Submit Registration</span>
+                                        <Icon name="send" className="w-5 h-5"/>
+                                    </div>
+                                )}
                             </button>
                         </div>
                     </form>
 
-                    {/* 詳細條款區塊 */}
+                    {/* 活動條款區塊 */}
                     <div className="mt-20 p-8 bg-zinc-900/50 border border-zinc-800 rounded-3xl space-y-10 animate-fade-in">
                         <div>
                             <div className="terms-section"><h3 className="text-xl font-black text-white italic uppercase tracking-widest">活動條款</h3></div>
                             <div className="terms-text text-sm space-y-4">
                                 <p>本活動僅限於活動日期內 2026/1/1 起至 2026/12/31 23:59 PM 止（下稱活動日期）消費者於購買日起30天內（以購買日期為主）上PowerColor網頁上登錄資料，經撼訊科技股份有限公司（下稱本公司）審核成功後即可享有延長保固...</p>
                                 <p>同一產品序號僅限登錄一次延長保固，登錄完成並審核成功後，消費者不得將延長登記再轉讓給他人；配件、耗材及活動獎品不適用於此延長保固服務...</p>
-                                <p>此活動是與捷元合作，活動對象僅限於台澎金馬地區消費者，且僅限於與捷元合作相關之經銷商所購買之本網頁顯示卡產品...</p>
                                 <p>活動服務信箱 <a href="mailto:event@tul.com.tw" class="text-red-500 hover:underline">event@tul.com.tw</a> 服務時間週一至週五 09:30 - 12:00、13:30 - 17:00。</p>
                             </div>
                         </div>
